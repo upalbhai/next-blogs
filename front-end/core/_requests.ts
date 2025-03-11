@@ -41,3 +41,10 @@ export const logout = async () => {
   );
   return response.data;
 };
+
+export const subscription = async(email:string)=>{
+  const response = await axios.post(`${BASE_URL}${QUERIES.SUBSCRIBTION}`,{
+    email
+  });
+  return response.data
+}

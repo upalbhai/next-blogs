@@ -1,11 +1,12 @@
 import mongoose from 'mongoose';
 import { Blog } from '../models/blogModel.js';
 import User from '../models/userModel.js';
+import { notifySubscribers } from '../utils/emailService.js';
 
 
 export const createBlog = async (req, res, next) => {
     try {
-      const { title, content, tags ,category,image} = req.body;
+      const { title, content, tags,status ,category,image} = req.body;
   
       // Extract authorId from the authenticated user
       const authorId = req.user?.id; // Use optional chaining to avoid errors when user is not defined
@@ -13,6 +14,7 @@ export const createBlog = async (req, res, next) => {
       const newBlog = new Blog({
         title,
         content,
+        status,
         category,
         author: authorId,
         tags,
@@ -21,6 +23,10 @@ export const createBlog = async (req, res, next) => {
   
       // Save the blog post to the database
       const savedBlog = await newBlog.save();
+
+      if(savedBlog.status === 'published'){
+        await notifySubscribers(savedBlog)
+      }
   
       // Return success response with the saved blog data
       return res.status(201).json({
@@ -149,9 +155,7 @@ export const createBlog = async (req, res, next) => {
   export const getPostById = async(req,res)=>{
     try {
       const { id } = req.params;
-      console.log('id',id)
       const blog = await Blog.findById(id).populate("author", "username");
-      console.log('blog',blog)
       if (!blog) {
         return res.status(404).json({
           meta: {
@@ -350,3 +354,132 @@ export const deletePost = async (req, res) => {
        });
     }
   }
+
+
+export const toggleFeatured = async (req, res, next) => {
+  try {
+    const { id } = req.params; // Post ID
+
+    // Validate post ID
+    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        meta: {
+          success: false,
+          message: "Valid post ID is required",
+        },
+        error: "Invalid post ID",
+      });
+    }
+
+    // Find the post
+    const post = await Blog.findById(id).populate("author","username");
+
+    if (!post) {
+      return res.status(404).json({
+        meta: {
+          success: false,
+          message: "Post not found",
+        },
+        error: "Post not found",
+      });
+    }
+
+    if(post.author._id!=req.user.id){
+      return res.status(403).json({
+        meta: {
+          success: false,
+          message: "You are not authorized to update this blog",
+        }
+      })
+    }
+
+    // Toggle the featured status
+    post.featured = !post.featured;
+    await post.save();
+
+    // Return the updated post
+    return res.status(200).json({
+      meta: {
+        success: true,
+        message: "Post featured status updated",
+      },
+      data: post,
+      error: null,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+export const getFeaturedPosts = async (req, res, next) => {
+  try {
+    const { page = 1, limit = 10 } = req.query;
+
+    // Convert page and limit to numbers
+    const pageNumber = parseInt(page, 10);
+    const limitNumber = parseInt(limit, 10);
+
+    // Calculate the number of documents to skip
+    const skip = (pageNumber - 1) * limitNumber;
+
+    // Fetch featured posts with pagination
+    const featuredPosts = await Blog.find({ featured: true,status:"published" })
+      .populate("author", "username") // Populate author details
+      .sort({ createdAt: -1 }) // Sort by latest first
+      .skip(skip)
+      .limit(limitNumber);
+
+    // Count total featured posts
+    const totalFeaturedPosts = await Blog.countDocuments({ featured: true });
+
+    // Return the response
+    return res.status(200).json({
+      meta: {
+        success: true,
+        message: "Featured posts fetched successfully",
+        totalPosts: totalFeaturedPosts,
+        totalPages: Math.ceil(totalFeaturedPosts / limitNumber),
+        currentPage: pageNumber,
+      },
+      data: featuredPosts,
+      error: null,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+export const getCategories = async (req, res) => {
+  try {
+    const categories = await Blog.aggregate([
+      { $match: { status: "published" } }, // Fetch only published blogs
+      {
+        $group: {
+          _id: "$category",
+          image: { $first: "$image" }, // Fetch the first image found in each category
+        },
+      },
+      { $project: { category: "$_id", image: 1, _id: 0 } }, // Rename _id to category
+    ]);
+
+    return res.status(200).json({
+      meta: {
+        success: true,
+        message: "Categories fetched successfully",
+      },
+      data: categories,
+      error: null,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      meta: {
+        success: false,
+        message: "An error occurred while fetching categories",
+      },
+      data: null,
+      error: error.message || "Internal Server Error",
+    });
+  }
+};

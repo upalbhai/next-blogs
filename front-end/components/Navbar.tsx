@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FaBell, FaUserCircle, FaBars, FaTimes } from "react-icons/fa";
@@ -8,7 +8,7 @@ import { ModeToggle } from "./ModeToggle";
 import { Oath } from "./Oath";
 import { usePathname } from "next/navigation";
 
-const Navbar = () => {
+const NavbarContent = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const router = useRouter();
@@ -86,15 +86,22 @@ const Navbar = () => {
 
         {/* Navigation Links */}
         <div className="flex space-x-6">
-          {["Home", "About", "Contact"].map((item) => (
-            <Link
-              key={item}
-              href={`/${item.toLowerCase()}`}
-              className="px-4 py-2 rounded-3xl dark:bg-slate-900 bg-zinc-50 hover:shadow-md transition-shadow text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
-            >
-              {item}
-            </Link>
-          ))}
+        <Link
+  href="/"
+  className="px-4 py-2 rounded-3xl dark:bg-slate-900 bg-zinc-50 hover:shadow-md transition-shadow text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+>
+  Home
+</Link>
+{["About", "Contact"].map((item) => (
+  <Link
+    key={item}
+    href={`/${item.toLowerCase()}`}
+    className="px-4 py-2 rounded-3xl dark:bg-slate-900 bg-zinc-50 hover:shadow-md transition-shadow text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+  >
+    {item}
+  </Link>
+))}
+
         </div>
 
         {/* Search Bar */}
@@ -124,7 +131,15 @@ const Navbar = () => {
       <div
         className={`${isMenuOpen ? "flex" : "hidden"} flex-col md:hidden items-center w-full bg-white dark:bg-gray-800 py-4 space-y-4`}
       >
-        {["Home", "About", "Contact"].map((item) => (
+
+<Link
+  href="/"
+  className="px-4 py-2 rounded-lg text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+>
+  Home
+</Link>
+
+        {["About", "Contact"].map((item) => (
           <Link
             key={item}
             href={`/${item.toLowerCase()}`}
@@ -144,5 +159,11 @@ const Navbar = () => {
     </nav>
   );
 };
+
+const Navbar = () => (
+  <Suspense fallback={<div>Loading...</div>}>
+    <NavbarContent />
+  </Suspense>
+);
 
 export default Navbar;

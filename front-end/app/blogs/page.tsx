@@ -1,24 +1,34 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import BlogPostList from "@/components/BlogPostList";
 import { getAllPostsUSers } from "@/lib/blogs/_requests";
 
+const BlogPageWrapper = () => {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <BlogPage />
+    </Suspense>
+  );
+};
+
 interface Post {
-  _id: string;
+  id: string;
   title: string;
   category: string;
   content: string;
-  author: { _id: string; username: string };
+  author: { id: string; username: string };
   tags: string[];
   image: string;
   createdAt: string;
   updatedAt: string;
+  featured: boolean;
 }
 
+
 const BlogPage = () => {
-  const [posts, setPosts] = useState<Post[]>([]);
+  const [posts, setPosts] = useState<Post[]>([]); // ✅ Correctly typed state
   const [loading, setLoading] = useState(false);
   const [totalPages, setTotalPages] = useState(1);
   const [page, setPage] = useState(1);
@@ -29,17 +39,15 @@ const BlogPage = () => {
 
   const observer = useRef<IntersectionObserver | null>(null);
 
-  // Reset posts and page when searchQuery changes
   useEffect(() => {
     setPosts([]);
     setPage(1);
     setHasMore(true);
   }, [searchQuery]);
 
-  // Fetch posts when searchQuery or page changes
   useEffect(() => {
     const fetchPosts = async () => {
-      if (!hasMore || loading) return; // Prevent multiple API calls
+      if (!hasMore || loading) return;
 
       try {
         setLoading(true);
@@ -47,10 +55,14 @@ const BlogPage = () => {
 
         if (response?.data) {
           setPosts((prev) => {
-            // Avoid duplicate posts by checking _id
-            const newPosts = response.data.filter(
-              (post:any) => !prev.some((p) => p._id === post._id)
-            );
+            const newPosts = response.data
+              .filter((post: any) => !prev.some((p) => p.id === post._id))
+              .map((post: any) => ({
+                ...post,
+                id: post._id,
+                author: { id: post.author?._id, username: post.author?.username },
+              }));
+
             return [...prev, ...newPosts];
           });
 
@@ -69,35 +81,28 @@ const BlogPage = () => {
     fetchPosts();
   }, [searchQuery, page, hasMore, loading]);
 
-  // Infinite Scroll Observer
   const lastPostRef = useCallback(
     (node: HTMLElement | null) => {
       if (loading || !hasMore) return;
 
-      // Disconnect the previous observer
       if (observer.current) observer.current.disconnect();
 
-      // Create a new observer
       observer.current = new IntersectionObserver(
         (entries) => {
           if (entries[0].isIntersecting && hasMore) {
             setPage((prev) => prev + 1);
           }
         },
-        { threshold: 1.0 } // Trigger when the entire element is visible
+        { threshold: 1.0 }
       );
 
-      // Observe the last post element
       if (node) observer.current.observe(node);
     },
     [loading, hasMore]
   );
 
-  // Cleanup observer on unmount
   useEffect(() => {
-    return () => {
-      if (observer.current) observer.current.disconnect();
-    };
+    return () => observer.current?.disconnect();
   }, []);
 
   return (
@@ -105,13 +110,8 @@ const BlogPage = () => {
       <h1 className="text-3xl font-bold text-center my-8">Blog Posts</h1>
       <BlogPostList posts={posts} loading={loading} />
 
-      {/* Infinite Scroll Trigger */}
       {hasMore && <div ref={lastPostRef} className="h-10"></div>}
-
-      {/* Loading Indicator */}
       {loading && <div className="text-center py-4">Loading more posts...</div>}
-
-      {/* No More Posts */}
       {!hasMore && posts.length > 0 && (
         <div className="text-center py-4 text-gray-500">No more posts to load.</div>
       )}
@@ -119,4 +119,4 @@ const BlogPage = () => {
   );
 };
 
-export default BlogPage;
+export default BlogPageWrapper;

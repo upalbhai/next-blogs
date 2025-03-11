@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { format } from "date-fns";
-import { createComment, getComments } from "@/lib/comments/_requests";
+import { createComment, deleteComment, getComments } from "@/lib/comments/_requests";
 import {
   Dialog,
   DialogContent,
@@ -12,6 +12,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog"; // Import your modal/dialog component
+import { toast } from "@/hooks/use-toast";
 
 interface Comment {
   _id: string;
@@ -37,8 +38,15 @@ const Comments = ({ postId }: { postId: string }) => {
   const [page, setPage] = useState(1); // Current page
   const [totalPages, setTotalPages] = useState(1); // Total pages
   const [visibleReplies, setVisibleReplies] = useState<{ [key: string]: boolean }>({}); // Track visible replies for each comment
-  const userDataString = localStorage.getItem("userinfo");
-  const user = JSON.parse(userDataString);
+  const [user, setUser] = useState<any>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const userDataString = localStorage.getItem("userinfo");
+      setUser(userDataString ? JSON.parse(userDataString) : null);
+    }
+  }, []);
+  
 
   // Fetch comments for the post
   const fetchComments = async (page = 1) => {
@@ -48,7 +56,7 @@ const Comments = ({ postId }: { postId: string }) => {
       if (response.meta.success) {
         // Filter out replies (comments with a parentCommentId)
         const topLevelComments = response.data.filter(
-          (comment) => !comment.parentCommentId
+          (comment:any) => !comment.parentCommentId
         );
         if (page === 1) {
           setComments(topLevelComments); // Replace comments for the first page
@@ -61,7 +69,7 @@ const Comments = ({ postId }: { postId: string }) => {
       }
     } catch (err) {
       setError("Failed to fetch comments");
-      console.log("ERROR GETTING COMMENTS", err);
+      console.error("ERROR GETTING COMMENTS", err);
     } finally {
       setLoading(false);
     }
@@ -123,6 +131,27 @@ const Comments = ({ postId }: { postId: string }) => {
     }));
   };
 
+  const handleDeleteComment = async(id:string)=>{
+    try {
+        const response = await deleteComment(id);
+    if(response?.meta?.success){
+        fetchComments();
+        toast({
+            description: `${response?.meta?.message}`,
+            className:
+              'bg-green-100 text-green-800 border border-green-600 dark:bg-green-800 dark:text-white dark:border-green-600',
+          });
+    }
+    } catch (error) {
+        console.error('Error during Deleting comment:', error);
+      toast({
+        description: 'Error during Deleting comment:',
+        className:
+          'bg-red-100 text-red-800 border border-red-600 dark:bg-red-800 dark:text-white dark:border-red-600',
+      });   
+    }
+  }
+
   // Render a single comment (recursive for replies)
   const renderComment = (comment: Comment) => (
     <div key={comment._id} className="mb-4 pl-4 border-l-2 border-gray-200">
@@ -143,6 +172,13 @@ const Comments = ({ postId }: { postId: string }) => {
             onClick={() => handleReplyClick(comment)} // Open reply modal
           >
             Reply
+          </Button>
+          <Button
+            variant="link"
+            size="sm"
+            onClick={() => handleDeleteComment(comment?._id)} // Open reply modal
+          >
+            Delete
           </Button>
           {/* Show Replies Button */}
           {comment.replies?.length > 0 && (

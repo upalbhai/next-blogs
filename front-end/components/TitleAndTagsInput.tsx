@@ -3,15 +3,12 @@ import React from "react";
 import { Input } from "@/components/ui/input"; // shadcn/ui Input
 
 interface TitleAndTagsInputProps {
-  values: {
-    title: string;
-    category: string;
-    tags: string[];
-    image: string; // New field for image URL
-  };
-  setValues: (values: { title: string; category: string; tags: string[]; image: string }) => void;
-  isEdit?: boolean; // New prop to determine edit mode
+  values:any
+  setValues:any;
+  isEdit?: boolean; // Optional prop for edit mode
 }
+
+
 
 const TitleAndTagsInput: React.FC<TitleAndTagsInputProps> = ({ values, setValues, isEdit = false }) => {
   // Handle Input Change

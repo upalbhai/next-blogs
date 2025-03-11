@@ -14,7 +14,6 @@ export const createComment = async(reqObj:{
     },{
         withCredentials:true
     });
-    console.log('rrr',response)
     return response.data
 }
 
@@ -25,6 +24,9 @@ export const getComments = async(blogId:string,page:Number)=>{
     return response.data
 }
 
-    // export const deleteComment = async(commentId:string,authorId:string)={
-
-    // }
+    export const deleteComment = async(commentId:string)=>{
+        const response = await axios.delete(`${BASE_URL}${QUERIES.DELETE_COMMENTS}/${commentId}`,{
+            withCredentials:true
+        })
+        return response.data
+    }

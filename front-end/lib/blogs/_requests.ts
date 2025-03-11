@@ -33,12 +33,12 @@ export const getAllPostsUSers = async ({ search = "", status = "", page = 1, lim
     return response.data;
   };
 
-  export const getPostById=async(id:string)=>{
+  export const getPostById=async(id:any)=>{
     const response = await axios.get(`${BASE_URL}${QUERIES.GET_POST_BY_ID}/${id}`);
     return response.data;
   }
 
-  export const editPost = async (id: string, body: PostData): Promise<any> => {
+  export const editPost = async (id: any, body: PostData): Promise<any> => {
     const response = await axios.put(`${BASE_URL}${QUERIES.EDIT_POST}/${id}`, body, {
       withCredentials: true, // Correct placement of withCredentials
     });
@@ -59,5 +59,23 @@ export const getAllPostsUSers = async ({ search = "", status = "", page = 1, lim
     },{
     withCredentials:true
   })
+  return response.data
+}
+
+
+export const featurePost = async(postId:any)=>{
+  const response = await axios.put(`${BASE_URL}${QUERIES.FEATURE_POSTS}/${postId}`,{},{
+    withCredentials:true
+  })
+  return response.data
+}
+
+export const getFeaturePost = async()=>{
+  const response = await axios.get(`${BASE_URL}${QUERIES.FEATURE_POSTS}`);
+  return response.data
+}
+
+export const getCategories = async()=>{
+  const response = await axios.get(`${BASE_URL}${QUERIES.GET_CATEGORIES}`);
   return response.data
 }

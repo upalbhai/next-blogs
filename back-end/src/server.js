@@ -7,6 +7,7 @@ import { errorHandler } from "./middleware/errorHandler.js";
 import userRoutes from "./routes/userRoute.js";
 import blogRoutes from "./routes/blogRoutes.js";
 import commentRoutes from "./routes/commentRoutes.js";
+import subscribtionRoutes from "./routes/subscribtionRoutes.js";
 
 dotenv.config();
 const app = express();
@@ -27,6 +28,7 @@ app.use(cookieParser())
 app.use("/api/v1/user", userRoutes);
 app.use("/api/v1/blog", blogRoutes);
 app.use("/api/v1/comment", commentRoutes);
+app.use("/api/v1/subscribtion", subscribtionRoutes);
 app.use(errorHandler);
 // Database Connection
 connectDB().then(() => {

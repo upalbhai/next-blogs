@@ -1,0 +1,12 @@
+db.blogs.find()
+db.users.find({})
+db.users.update( db.users.update({_id:67cf2f71d9e08a3c67905a9e},{$set:{isAdmin:true}})
+)
+  { $set: { isAdmin: true } }
+  { _id: ObjectId("67cf2f71d9e08a3c67905a9e") },
+db.users.update(
+db.users.update({_id:67cf2f71d9e08a3c67905a9e},{$set:{isAdmin:true}})
+db.users.find({})
+show collections
+use next-blog
+show dbs

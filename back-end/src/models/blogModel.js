@@ -11,6 +11,7 @@ import mongoose, { Schema, model } from "mongoose";
       comments: [{ type: Schema.Types.ObjectId, ref: "Comment" }], // Array of Comment references
       image: { type:String }, // Array of Comment references
       tags: [{ type: String }],
+      featured: { type: Boolean, default: false },
       likes: { type: Number, default: 0 },
       views: { type: Number, default: 0 },
       createdAt: { type: Date, default: Date.now },

@@ -72,14 +72,6 @@ const Page = () => {
       }
     } catch (error) {
       console.error("Error deleting post:", error);
-      toast({
-        description:
-          error instanceof Error
-            ? error.response?.data.meta?.message
-            : "Something went wrong",
-        className:
-          "bg-red-100 text-red-800 border border-red-600 dark:bg-red-800 dark:text-white dark:border-red-600",
-      });
     } finally {
       setLoading(false);
     }

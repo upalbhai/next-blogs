@@ -18,7 +18,8 @@ export const Oath = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [user, setUser] = useState<User | null>(null);
   const [openDialog, setOpenDialog] = useState<boolean>(false);
-  const [authInitialized, setAuthInitialized] = useState<boolean>(false); // New state to track Firebase auth initialization
+  const [userData, setUserData] = useState<any>(null); 
+  const [authInitialized, setAuthInitialized] = useState<boolean>(false); 
   const router = useRouter();
 
   useEffect(() => {
@@ -27,6 +28,12 @@ export const Oath = () => {
       setAuthInitialized(true);
     });
 
+    // Get userinfo from localStorage when component mounts
+    if (typeof window !== "undefined") {
+      const userDataString = localStorage.getItem("userinfo");
+      setUserData(userDataString ? JSON.parse(userDataString) : null);
+    }
+
     return () => unsubscribe();
   }, []);
 
@@ -34,7 +41,6 @@ export const Oath = () => {
     setLoading(true);
     try {
       const result = await signInWithPopup(auth, provider);
-      console.log('Signed in user:', result.user?.displayName);
 
       const obj = {
         name: result.user?.displayName || 'Unknown User',
@@ -42,27 +48,22 @@ export const Oath = () => {
         profilePicture: result.user?.photoURL || '',
       };
 
-      const response:any = await google(obj);
-      console.log(response);
+      const response: any = await google(obj);
 
       if (response?.meta?.success) {
-        const responseString = JSON.stringify(response?.data);
-
-// Step 2: Store the string in local storage
-localStorage.setItem("userinfo", responseString);
+        localStorage.setItem("userinfo", JSON.stringify(response?.data));
+        setUserData(response?.data);
 
         toast({
           description: `${response?.meta?.message}`,
-          className:
-            'bg-green-100 text-green-800 border border-green-600 dark:bg-green-800 dark:text-white dark:border-green-600',
+          className: 'bg-green-100 text-green-800 border border-green-600 dark:bg-green-800 dark:text-white dark:border-green-600',
         });
       }
     } catch (error) {
       console.error('Error during Google sign-in:', error);
       toast({
         description: 'Error during Google sign-in.',
-        className:
-          'bg-red-100 text-red-800 border border-red-600 dark:bg-red-800 dark:text-white dark:border-red-600',
+        className: 'bg-red-100 text-red-800 border border-red-600 dark:bg-red-800 dark:text-white dark:border-red-600',
       });
     } finally {
       setLoading(false);
@@ -77,12 +78,11 @@ localStorage.setItem("userinfo", responseString);
         await signOut(auth);
         localStorage.removeItem("userinfo");
         setUser(null);
+        setUserData(null);
   
-        console.log("User signed out successfully");
         toast({
           description: `${response?.meta?.message}`,
-          className:
-            "bg-green-100 text-green-800 border border-green-600 dark:bg-green-800 dark:text-white dark:border-green-600",
+          className: "bg-green-100 text-green-800 border border-green-600 dark:bg-green-800 dark:text-white dark:border-green-600",
         });
       }
     } catch (error) {
@@ -90,40 +90,35 @@ localStorage.setItem("userinfo", responseString);
       toast({
         title: "Logout Unsuccessful",
         description: "Something went wrong.",
-        className:
-          "bg-red-100 text-red-800 border border-red-600 dark:bg-red-800 dark:text-white dark:border-red-600",
+        className: "bg-red-100 text-red-800 border border-red-600 dark:bg-red-800 dark:text-white dark:border-red-600",
       });
     }
   };
-  
 
-  // Show a loading state until Firebase auth is initialized
-  if (!authInitialized) {
-    return <div>Loading...</div>; // Or a spinner/loading component
-  }
+  if (!authInitialized) return <div>Loading...</div>;
 
   return (
     <div className="flex items-center">
       {user ? (
         <div className="flex items-center space-x-4">
           <DropdownMenu>
-      {/* Avatar as Dropdown Trigger */}
-      <DropdownMenuTrigger asChild>
-        <img
-          src={user.photoURL || "/default-avatar.png"}
-          alt="User Avatar"
-          className="w-9 h-9 rounded-full border-2 border-gray-600 cursor-pointer"
-        />
-      </DropdownMenuTrigger>
+            <DropdownMenuTrigger asChild>
+              <img
+                src={user.photoURL || "/default-avatar.png"}
+                alt="User Avatar"
+                className="w-9 h-9 rounded-full border-2 border-gray-600 cursor-pointer"
+              />
+            </DropdownMenuTrigger>
 
-      {/* Dropdown Content */}
-      <DropdownMenuContent className="w-40">
-        <DropdownMenuItem onClick={() => router.push("/dashboard")}>
-          Dashboard
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-          {/* Dialog Trigger Button */}
+            {userData?.user?.isAdmin && (
+              <DropdownMenuContent className="w-40">
+                <DropdownMenuItem onClick={() => router.push("/dashboard")}>
+                  Dashboard
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            )}
+          </DropdownMenu>
+
           <Dialog open={openDialog} onOpenChange={setOpenDialog}>
             <DialogTrigger asChild>
               <div
@@ -134,7 +129,6 @@ localStorage.setItem("userinfo", responseString);
               </div>
             </DialogTrigger>
 
-            {/* Dialog Content */}
             <DialogContent className="max-w-[90vw] sm:max-w-md w-full sm:mx-auto rounded-lg">
               <DialogTitle className="text-lg font-semibold text-center">
                 Confirm Logout

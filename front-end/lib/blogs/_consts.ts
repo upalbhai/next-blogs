@@ -5,5 +5,7 @@ export const QUERIES = {
     EDIT_POST:"/blog/edit-post",
     GET_POST_BY_ID:"/blog/get-post-by-id",
     DELETE_POST:"/blog/delete-post",
-    UPADATE_STATUS:"/blog/update-status"
+    UPADATE_STATUS:"/blog/update-status",
+    FEATURE_POSTS:"/blog/feature-post",
+    GET_CATEGORIES:"/blog/categories"
 }

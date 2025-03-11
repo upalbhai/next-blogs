@@ -1,3 +1,4 @@
+import PrivateRoute from '@/components/PrivateRoute'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import React from 'react'
 
@@ -36,4 +37,10 @@ const Dashboard = () => {
   )
 }
 
-export default Dashboard
+export default function DashboardPage() {
+  return (
+    <PrivateRoute>
+      <Dashboard />
+    </PrivateRoute>
+  );
+}

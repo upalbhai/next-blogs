@@ -7,19 +7,23 @@ import dynamic from "next/dynamic";
 import TitleAndTagsInput from "@/components/TitleAndTagsInput";
 import { useTheme } from "next-themes"; // Import useTheme from next-themes
 import { toast } from "@/hooks/use-toast";
+import FeaturePostEdit from "@/components/FeaturePostEdit";
+import { Button } from "@/components/ui/button";
 
 const JoditEditor = dynamic(() => import("jodit-react"), { ssr: false });
 
 const EditPost = () => {
   const editor = useRef(null);
   const params = useParams();
-  const postId: string = params.id;
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const postId= params.id;
   const [post, setPost] = useState({
     title: "",
     category: "",
     content: "",
     tags: [""],
-    image:""
+    image:"",
+    featured:false
   });
   const router = useRouter()
 
@@ -36,7 +40,8 @@ const EditPost = () => {
           category: response.data.category,
           content: response.data.content,
           tags: response.data.tags,
-          image: response.data.image
+          image: response.data.image,
+          featured: response.data.featured
         });
       }
     } catch (error) {
@@ -74,14 +79,6 @@ const EditPost = () => {
       }
     } catch (error) {
       console.error("Error updating post:", error);
-      toast({
-        description:
-          error instanceof Error
-            ? error.response?.data.meta?.message
-            : "Something went wrong",
-        className:
-          "bg-red-100 text-red-800 border border-red-600 dark:bg-red-800 dark:text-white dark:border-red-600",
-      });
     } finally {
       setIsLoading(false);
     }
@@ -120,12 +117,20 @@ const EditPost = () => {
     },
   };
 
-  console.log('post',post)
 
   return (
     <div className={`max-w-3xl mx-auto p-4 border rounded-lg shadow-sm ${theme === "dark" ? "bg-gray-900 border-gray-800" : "bg-white border-gray-300"}`}>
       <h1 className={`text-2xl font-bold mb-4 ${theme === "dark" ? "text-white" : "text-gray-900"}`}>Edit Post</h1>
-
+      <Button onClick={() => setIsDialogOpen(true)}>
+  {post?.featured ? "Unfeature" : "Feature"} Post
+</Button>
+      <FeaturePostEdit
+        postId={postId}
+        isOpen={isDialogOpen}
+        onClose={() => setIsDialogOpen(false)}
+        featured={post?.featured}
+        fetchPost={fetchPost}
+      />
       <TitleAndTagsInput values={post} setValues={setPost} isEdit={true} />
 
       {/* Jodit Editor */}
